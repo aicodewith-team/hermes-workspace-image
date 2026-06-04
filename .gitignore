@@ -1,0 +1,11 @@
+# Docker build artifacts
+*.tar.gz
+*.deb
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
