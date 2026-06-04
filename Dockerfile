@@ -50,3 +50,21 @@ COPY nginx-workspace.conf /etc/nginx/sites-available/workspace
 # ── Launch script ──
 COPY start-vnc.sh /opt/vnc/start-vnc.sh
 RUN chmod +x /opt/vnc/start-vnc.sh
+
+# ═══════════════════════════════════════════════════════════════
+# ── hermes-webui: browser-based agent management panel ──
+# Gateway Bridge mode — proxies browser chat to Gateway API :8642.
+# No Agent instance conflict (does NOT import AIAgent directly).
+# ═══════════════════════════════════════════════════════════════
+RUN git clone --depth 1 https://github.com/nesquena/hermes-webui.git \
+      /opt/hermes-webui && \
+    /usr/local/bin/uv pip install --python /opt/hermes/.venv/bin/python3 \
+      --no-cache-dir pyyaml cryptography && \
+    chown -R hermes:hermes /opt/hermes-webui
+
+# Runtime defaults — HERMES_WEBUI_GATEWAY_API_KEY is injected at runtime by Nomad template
+ENV HERMES_WEBUI_AGENT_DIR=/opt/hermes \
+    HERMES_WEBUI_CHAT_BACKEND=gateway \
+    HERMES_WEBUI_GATEWAY_BASE_URL=http://127.0.0.1:8642 \
+    HERMES_WEBUI_HOST=127.0.0.1 \
+    HERMES_WEBUI_PORT=8787
