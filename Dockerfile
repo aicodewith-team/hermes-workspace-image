@@ -62,9 +62,34 @@ RUN git clone --depth 1 https://github.com/nesquena/hermes-webui.git \
       --no-cache-dir pyyaml cryptography && \
     chown -R hermes:hermes /opt/hermes-webui
 
-# Runtime defaults — HERMES_WEBUI_GATEWAY_API_KEY is injected at runtime by Nomad template
+# Runtime defaults — HERMES_WEBUI_GATEWAY_API_KEY / HERMES_WEBUI_HOST are set
+# by entrypoint.sh at startup (host 0.0.0.0 + the gateway key).
 ENV HERMES_WEBUI_AGENT_DIR=/opt/hermes \
     HERMES_WEBUI_CHAT_BACKEND=gateway \
     HERMES_WEBUI_GATEWAY_BASE_URL=http://127.0.0.1:8642 \
     HERMES_WEBUI_HOST=127.0.0.1 \
     HERMES_WEBUI_PORT=8787
+
+# ═══════════════════════════════════════════════════════════════
+# ── /publish StaticFiles mount (build-time patch) ──
+# Hermes web_server.py has no /publish mount upstream. Patch it here at build
+# time (not at container startup) so a structural change upstream fails the CI
+# build loudly instead of silently no-op'ing on every boot.
+# ═══════════════════════════════════════════════════════════════
+RUN WEB_SERVER=/opt/hermes/hermes_cli/web_server.py && \
+    if [ ! -f "$WEB_SERVER" ]; then \
+      echo "ERROR: $WEB_SERVER not found — Hermes layout changed" >&2; exit 1; \
+    fi && \
+    if ! grep -q '"/publish"' "$WEB_SERVER"; then \
+      sed -i '/def mount_spa(application: FastAPI):/a\    app.mount("/publish", StaticFiles(directory=get_hermes_home() / "public", html=True), name="publish")' "$WEB_SERVER" && \
+      grep -q '"/publish"' "$WEB_SERVER" || { echo "ERROR: /publish patch did not apply" >&2; exit 1; } && \
+      echo "[build] Patched web_server.py with /publish StaticFiles mount"; \
+    fi
+
+# ── Startup contract ──
+# entrypoint.sh reads env (MODEL_ID / PROVIDER_NAME / OPENAI_BASE_URL /
+# API_SERVER_KEY / ENABLE_VNC / HERMES_HOME), generates config.yaml, starts
+# webui + (optionally) the VNC stack, and exec's the gateway as PID 1.
+COPY entrypoint.sh /opt/vnc/entrypoint.sh
+RUN chmod +x /opt/vnc/entrypoint.sh
+ENTRYPOINT ["/opt/vnc/entrypoint.sh"]
