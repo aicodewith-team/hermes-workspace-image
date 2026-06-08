@@ -61,10 +61,6 @@ HERMES_WEBUI_HOST=0.0.0.0 \
   "$PY" /opt/hermes-webui/server.py &
 
 # ── 3. VNC stack (ENABLE_VNC=true only) ──
-# NOTE: this round the Nomad template's VNC branch still overrides the image
-# ENTRYPOINT with its own inline shell, so this branch is the documented
-# contract for the future VNC migration (stage 1.5) and is docker-run testable,
-# but is not exercised by production VNC workspaces yet.
 if [ "${ENABLE_VNC:-false}" = "true" ]; then
     echo "[entrypoint] ENABLE_VNC=true — starting VNC stack + dashboard"
     /opt/vnc/start-vnc.sh

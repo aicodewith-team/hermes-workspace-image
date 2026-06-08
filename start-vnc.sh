@@ -4,8 +4,14 @@
 set -e
 
 VNC_PASSWORD="${VNC_PASSWORD:-$(head -c 12 /dev/urandom | base64 | tr -d '=+/')}"
-echo "$VNC_PASSWORD" > /tmp/vnc-password.txt
-chmod 600 /tmp/vnc-password.txt
+VNC_PASSWORD_FILE="${VNC_PASSWORD_FILE:-}"
+if [ -z "$VNC_PASSWORD_FILE" ] && [ -n "${HERMES_HOME:-}" ]; then
+  VNC_PASSWORD_FILE="$(cd "$HERMES_HOME/../../.." && pwd)/vnc-password.txt"
+fi
+VNC_PASSWORD_FILE="${VNC_PASSWORD_FILE:-/tmp/vnc-password.txt}"
+mkdir -p "$(dirname "$VNC_PASSWORD_FILE")"
+echo "$VNC_PASSWORD" > "$VNC_PASSWORD_FILE"
+chmod 600 "$VNC_PASSWORD_FILE"
 
 # 0. Link noVNC to web root (nginx serves from /opt/data/www)
 echo "[VNC] Linking noVNC to web root"
@@ -35,5 +41,5 @@ ln -sf /etc/nginx/sites-available/workspace /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 /usr/sbin/nginx
 
-echo "[VNC] Ready. Password: $VNC_PASSWORD"
+echo "[VNC] Ready. Password file: $VNC_PASSWORD_FILE"
 echo "[VNC] noVNC: http://localhost:80/vnc/vnc.html"

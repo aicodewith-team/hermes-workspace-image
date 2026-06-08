@@ -31,6 +31,17 @@ is a list), starts hermes-webui on `0.0.0.0:8787`, optionally starts the VNC sta
 `hermes dashboard` (`ENABLE_VNC=true`), then `exec`s `hermes gateway run --no-supervise`
 as PID 1 so it receives `SIGTERM` on shutdown.
 
+When `ENABLE_VNC=true`, nginx listens on `:80` and fronts:
+
+- `/websockify` -> websockify `:6080`
+- `/webui/` -> hermes-webui `:8787`
+- `/publish/` -> Hermes dashboard/web server `:9119`
+- `/` -> noVNC/static files first, then dashboard fallback
+
+`start-vnc.sh` writes the generated password to `VNC_PASSWORD_FILE` when set.
+Otherwise it derives the workspace root from `$HERMES_HOME` and writes
+`<workspace-root>/vnc-password.txt`, matching the control-plane read path.
+
 ```bash
 # Non-VNC
 docker run -d -e ENABLE_VNC=false \
