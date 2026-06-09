@@ -7,7 +7,7 @@
 # Hermes tags are mutable and can cause non-reproducible builds.
 # Update the digest when upgrading Hermes versions.
 
-FROM nousresearch/hermes-agent@sha256:d3b6a6b73820f1cc3f95424d4eef66ac3551e2d9ab03a81ba072eca280cd50d2
+FROM nousresearch/hermes-agent@sha256:b89ec23f35fbdbdafa754551d94bbca64b1a9a53db8c3a9885654abcd81d114b
 
 # ── VNC runtime packages (apt) ──
 RUN apt-get update && apt-get install -y --no-install-recommends \
